@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Customer Details</title>
+</head>
+<body>
+    <h2>Customer Details</h2>
+    <button onclick="addCustomerPage()">Add Customer</button>
+    <table id="customerTable">
+        <thead>
+            <tr>
+                <th>FirstName</th>
+                <th>LastName</th>
+                <th>Address</th>
+                <th>City</th>
+                <th>State</th>
+                <th>Email</th>
+                <th>Phone</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>            
+        </tbody>
+    </table>
+    <script>
+        function addCustomerPage() {
+            window.location.href = 'addCustomer.html';
+        }
+        async function fetchCustomerDetails() {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                alert('Authentication token not found. Please log in.');
+                window.location.href = 'login.html';
+                return;
+            }
+            const response = await fetch('http://localhost:5000/custList', {
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                },
+            });
+            const respData = await response.json();
+            const data=respData.data
+            const tableBody = document.getElementById('customerTable').getElementsByTagName('tbody')[0];
+            await data.forEach(customer => {
+                const row = tableBody.insertRow();
+                row.insertCell(0).innerHTML = customer.first_name;
+                row.insertCell(1).innerHTML = customer.last_name;
+                row.insertCell(2).innerHTML = customer.address;
+                row.insertCell(3).innerHTML = customer.city;
+                row.insertCell(4).innerHTML = customer.state;
+                row.insertCell(5).innerHTML = customer.email;
+                row.insertCell(6).innerHTML = customer.phone;
+                const editButton = document.createElement('button');
+                editButton.textContent = 'Edit';
+                editButton.addEventListener('click', () => editCustomer(customer.uuid));
+                const deleteButton = document.createElement('button');
+                deleteButton.textContent = 'Delete';
+                deleteButton.addEventListener('click', () => deleteCustomer(customer.uuid)); 
+                const actionCell = row.insertCell(7);
+                actionCell.appendChild(editButton);
+                actionCell.appendChild(deleteButton);
+            });
+        }
+        function editCustomer(customerId) {
+            window.location.href = `editCustomer.html?customerId=${customerId}`;
+        }
+
+        async function deleteCustomer(customerId) {
+            const token = localStorage.getItem('token');
+            const response = await fetch('http://localhost:5000/deleteCust', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json',
+                    },
+                    body:JSON.stringify({uuid:customerId}),
+                });
+                if (response.ok) {
+                    alert('Customer deleted successfully');
+                    location.reload()
+                } else {
+                    alert('Failed to delete customer');
+                }
+        }
+        window.onload = function() {
+            fetchCustomerDetails();
+        };
+    </script>
+</body>
+</html>
